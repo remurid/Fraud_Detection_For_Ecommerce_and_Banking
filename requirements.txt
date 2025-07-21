@@ -1,0 +1,8 @@
+# Add your project dependencies here
+pandas 
+numpy 
+scikit-learn 
+matplotlib 
+seaborn 
+imbalanced-learn
+shap
