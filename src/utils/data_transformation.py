@@ -49,17 +49,33 @@ def scale_features(X_train, X_test, method='standard'):
     return X_train_scaled, X_test_scaled
 
 
-def encode_categorical_features(X_train, X_test, categorical_cols):
+def encode_categorical_features(X_train, X_test, categorical_cols, max_categories=50):
     """
     One-hot encode categorical features in train and test sets, aligning columns.
     Args:
         X_train (pd.DataFrame): Training feature matrix.
         X_test (pd.DataFrame): Test feature matrix.
         categorical_cols (list): List of categorical column names.
+        max_categories (int): Maximum number of categories to keep per column (default 50).
     Returns:
         X_train_encoded, X_test_encoded: Encoded and aligned feature matrices.
     """
-    X_train_enc = pd.get_dummies(X_train, columns=categorical_cols)
-    X_test_enc = pd.get_dummies(X_test, columns=categorical_cols)
+    X_train_copy = X_train.copy()
+    X_test_copy = X_test.copy()
+    
+    # Handle high-cardinality categorical columns
+    for col in categorical_cols:
+        if col in X_train_copy.columns:
+            # Get top categories from training data
+            top_categories = X_train_copy[col].value_counts().head(max_categories).index.tolist()
+            
+            # Replace rare categories with 'Other'
+            X_train_copy[col] = X_train_copy[col].apply(lambda x: x if x in top_categories else 'Other')
+            X_test_copy[col] = X_test_copy[col].apply(lambda x: x if x in top_categories else 'Other')
+            
+            print(f"Column '{col}': kept top {len(top_categories)} categories, others grouped as 'Other'")
+    
+    X_train_enc = pd.get_dummies(X_train_copy, columns=categorical_cols)
+    X_test_enc = pd.get_dummies(X_test_copy, columns=categorical_cols)
     X_train_enc, X_test_enc = X_train_enc.align(X_test_enc, join='left', axis=1, fill_value=0)
     return X_train_enc, X_test_enc 
